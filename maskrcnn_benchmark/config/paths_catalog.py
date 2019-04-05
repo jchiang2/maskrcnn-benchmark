@@ -7,6 +7,18 @@ import os
 class DatasetCatalog(object):
     DATA_DIR = "datasets"
     DATASETS = {
+        "myDataset_train": {
+            "img_dir": "Movie_Frames_test/split_train/Frames",
+            "ann_file": "Movie_Frames_test/split_train/Bboxes_mydataset"
+        },
+        "myDataset_train_split": {
+            "img_dir": "Movie_Frames_test/split_train/Frames",
+            "ann_file": "Movie_Frames_test/split_train/Bboxes_mydataset"
+        },
+        "myDataset_test": {
+            "img_dir": "Movie_Frames_test/Frames",
+            "ann_file": "Movie_Frames_test/Bboxes_mydataset"
+        },
         "coco_2017_train": {
             "img_dir": "coco/train2017",
             "ann_file": "coco/annotations/instances_train2017.json"
@@ -92,6 +104,18 @@ class DatasetCatalog(object):
 
     @staticmethod
     def get(name):
+        if "myDataset" in name:
+            data_dir = DatasetCatalog.DATA_DIR
+            attrs = DatasetCatalog.DATASETS[name]
+            args = dict(
+                root=os.path.join(data_dir, attrs["img_dir"]),
+                ann_file=os.path.join(data_dir, attrs["ann_file"]),
+            )
+            return dict(
+                factory="myDataset",
+                args=args,
+            )
+
         if "coco" in name:
             data_dir = DatasetCatalog.DATA_DIR
             attrs = DatasetCatalog.DATASETS[name]

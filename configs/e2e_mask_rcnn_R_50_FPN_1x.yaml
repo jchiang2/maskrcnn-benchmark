@@ -1,9 +1,10 @@
 MODEL:
   META_ARCHITECTURE: "GeneralizedRCNN"
-  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  WEIGHT: "~/github/maskrcnn-benchmark/tools/pretrained_model/mask_rcnn_R-50-FPN_1x_detectron_no_last_layers.pth"
   BACKBONE:
     CONV_BODY: "R-50-FPN"
-    OUT_CHANNELS: 256
+  RESNETS:
+    BACKBONE_OUT_CHANNELS: 256
   RPN:
     USE_FPN: True
     ANCHOR_STRIDE: (4, 8, 16, 32, 64)

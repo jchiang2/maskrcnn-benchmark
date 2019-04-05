@@ -71,23 +71,26 @@ ResNet101FPNStagesTo5 = tuple(
     StageSpec(index=i, block_count=c, return_features=r)
     for (i, c, r) in ((1, 3, True), (2, 4, True), (3, 23, True), (4, 3, True))
 )
-
+# ResNet-152-FPN (including all stages)
+ResNet152FPNStagesTo5 = tuple(
+    StageSpec(index=i, block_count=c, return_features=r)
+    for (i, c, r) in ((1, 3, True), (2, 8, True), (3, 36, True), (4, 3, True))
+)
 
 class ResNet(nn.Module):
-    def __init__(self, cfg):
+    def __init__(self, cfg, in_size):
         super(ResNet, self).__init__()
 
         # If we want to use the cfg in forward(), then we should make a copy
         # of it and store it for later use:
         # self.cfg = cfg.clone()
-
         # Translate string names to implementations
         stem_module = _STEM_MODULES[cfg.MODEL.RESNETS.STEM_FUNC]
         stage_specs = _STAGE_SPECS[cfg.MODEL.BACKBONE.CONV_BODY]
         transformation_module = _TRANSFORMATION_MODULES[cfg.MODEL.RESNETS.TRANS_FUNC]
 
         # Construct the stem module
-        self.stem = stem_module(cfg)
+        self.stem = stem_module(cfg, in_size)
 
         # Constuct the specified ResNet stages
         num_groups = cfg.MODEL.RESNETS.NUM_GROUPS
@@ -183,6 +186,7 @@ class ResNetHead(nn.Module):
             stride = None
             self.add_module(name, module)
             self.stages.append(name)
+        self.out_channels = out_channels
 
     def forward(self, x):
         for stage in self.stages:
@@ -239,7 +243,7 @@ class Bottleneck(nn.Module):
             down_stride = stride if dilation == 1 else 1
             self.downsample = nn.Sequential(
                 Conv2d(
-                    in_channels, out_channels, 
+                    in_channels, out_channels,
                     kernel_size=1, stride=down_stride, bias=False
                 ),
                 norm_func(out_channels),
@@ -311,14 +315,15 @@ class Bottleneck(nn.Module):
 
 
 class BaseStem(nn.Module):
-    def __init__(self, cfg, norm_func):
+    def __init__(self, cfg, in_size, norm_func):
         super(BaseStem, self).__init__()
 
         out_channels = cfg.MODEL.RESNETS.STEM_OUT_CHANNELS
 
         self.conv1 = Conv2d(
-            3, out_channels, kernel_size=7, stride=2, padding=3, bias=False
+            in_size, out_channels, kernel_size=7, stride=2, padding=3, bias=False
         )
+
         self.bn1 = norm_func(out_channels)
 
         for l in [self.conv1,]:
@@ -356,9 +361,9 @@ class BottleneckWithFixedBatchNorm(Bottleneck):
 
 
 class StemWithFixedBatchNorm(BaseStem):
-    def __init__(self, cfg):
+    def __init__(self, cfg, in_size):
         super(StemWithFixedBatchNorm, self).__init__(
-            cfg, norm_func=FrozenBatchNorm2d
+            cfg, in_size, norm_func=FrozenBatchNorm2d,
         )
 
 
@@ -386,8 +391,8 @@ class BottleneckWithGN(Bottleneck):
 
 
 class StemWithGN(BaseStem):
-    def __init__(self, cfg):
-        super(StemWithGN, self).__init__(cfg, norm_func=group_norm)
+    def __init__(self, cfg, in_size):
+        super(StemWithGN, self).__init__(cfg, in_size, norm_func=group_norm)
 
 
 _TRANSFORMATION_MODULES = Registry({
@@ -406,5 +411,8 @@ _STAGE_SPECS = Registry({
     "R-101-C4": ResNet101StagesTo4,
     "R-101-C5": ResNet101StagesTo5,
     "R-50-FPN": ResNet50FPNStagesTo5,
+    "R-50-FPN-RETINANET": ResNet50FPNStagesTo5,
     "R-101-FPN": ResNet101FPNStagesTo5,
+    "R-101-FPN-RETINANET": ResNet101FPNStagesTo5,
+    "R-152-FPN": ResNet152FPNStagesTo5,
 })

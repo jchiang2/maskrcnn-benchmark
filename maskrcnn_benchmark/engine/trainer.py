@@ -8,6 +8,7 @@ import torch.distributed as dist
 
 from maskrcnn_benchmark.utils.comm import get_world_size
 from maskrcnn_benchmark.utils.metric_logger import MetricLogger
+from maskrcnn_benchmark.data.datasets.mydataset import myDataset
 
 
 def reduce_loss_dict(loss_dict):
@@ -51,19 +52,31 @@ def do_train(
     max_iter = len(data_loader)
     start_iter = arguments["iteration"]
     model.train()
+
+    # for name, param in model.named_parameters():
+    #     if ('backbone' in name) or ('rpn' in name) or ('bbox' in name):
+    #         param.requires_grad = False
+    #     if param.requires_grad:
+    #         print(name)
+    # ann_file = "Movie_Frames_train/Bboxes_mydataset"
+    # root = "Movie_Frames_train/Frames"
+    # data_loader = myDataset(ann_file, root, transforms=transforms)
+    # print(data_loader.root)
+
+
     start_training_time = time.time()
     end = time.time()
-    for iteration, (images, targets, _) in enumerate(data_loader, start_iter):
+    for iteration, (images, optFlowVol, targets, _) in enumerate(data_loader, start_iter):
         data_time = time.time() - end
         iteration = iteration + 1
         arguments["iteration"] = iteration
-
         scheduler.step()
-
+        
         images = images.to(device)
+        optFlowVol = optFlowVol.to(device)
         targets = [target.to(device) for target in targets]
 
-        loss_dict = model(images, targets)
+        loss_dict = model(images, optFlowVol, targets=targets)
 
         losses = sum(loss for loss in loss_dict.values())
 
@@ -75,6 +88,9 @@ def do_train(
         optimizer.zero_grad()
         losses.backward()
         optimizer.step()
+
+
+        
 
         batch_time = time.time() - end
         end = time.time()

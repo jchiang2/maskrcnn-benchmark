@@ -4,7 +4,7 @@ import os
 from natsort import natsorted
 
 paths = natsorted(os.listdir('Frames'))
-prev = cv2.imread('Frames/' + paths[0])
+prev = cv2.imread('Frames/'+paths[0])
 prevgray = cv2.cvtColor(prev, cv2.COLOR_BGR2GRAY)
 for path in paths:
     filepath = os.path.join('Frames', path)
@@ -16,9 +16,5 @@ for path in paths:
 
     print(path)
 
-# img = np.load('opt_flow_np/1_Frame0.jpg.npy')
-# image = img[:,:,0]
-# image = cv2.normalize(image, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-# image = Image.fromarray(image)
-# cv2.imshow('Frame',img[:,:,0])
-# cv2.waitKey(0)
+
+

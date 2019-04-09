@@ -201,8 +201,8 @@ class myDataset(torch.utils.data.Dataset):
         imgPath = os.path.join(self.root, imgFile)
         image = Image.open(imgPath)
         """
-        image = get_img(idx)
-        labels, boxes = get_labels(idx)
+        image = self.get_img(idx)
+        labels, boxes = self.get_labels(idx)
         """
         infoFile = self.infoFiles[idx]
         infoPath = os.path.join(self.ann_file, infoFile)

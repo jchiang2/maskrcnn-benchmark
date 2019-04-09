@@ -1,6 +1,6 @@
 import os
 
-folder = "train/train/Frames"
+folder = "train/Frames"
 
 files = os.listdir(folder)
 

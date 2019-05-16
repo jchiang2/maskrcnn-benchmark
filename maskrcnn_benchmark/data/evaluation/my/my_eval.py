@@ -2,11 +2,14 @@
 # (See https://github.com/chainer/chainercv/blob/master/chainercv/evaluations/eval_detection_my.py)
 from __future__ import division
 
+import cv2
 import os
+import torch
 from collections import defaultdict
 import numpy as np
 from maskrcnn_benchmark.structures.bounding_box import BoxList
 from maskrcnn_benchmark.structures.boxlist_ops import boxlist_iou
+# from maskrcnn_benchmark.data.datasets.predictor_car import COCODemo_car
 
 
 def do_my_evaluation(dataset, predictions, output_folder, logger):
@@ -14,23 +17,30 @@ def do_my_evaluation(dataset, predictions, output_folder, logger):
     # for the user to choose
     pred_boxlists = []
     gt_boxlists = []
-    for image_id, prediction in enumerate(predictions):
-        img_info = dataset.get_img_info(image_id)
-        if len(prediction) == 0:
-            continue
-        image_width = img_info["width"]
-        image_height = img_info["height"]
-        prediction = prediction.resize((image_width, image_height))
+    print(predictions)
+    for image_id, prediction in predictions.items():
+        
+        # img_info = dataset.get_img_info(image_id)
+        # if len(prediction) == 0:
+        #     continue
+        # image_width = img_info["width"]
+        # image_height = img_info["height"]
+        # prediction = prediction.resize((image_width, image_height))
         pred_boxlists.append(prediction)
 
         gt_boxlist = dataset.get_groundtruth(image_id)
         gt_boxlists.append(gt_boxlist)
-    result = eval_detection_my(
-        pred_boxlists=pred_boxlists,
-        gt_boxlists=gt_boxlists,
-        iou_thresh=0.5,
-        use_07_metric=True,
-    )
+
+
+    if pred_boxlists == []:
+        result = {"ap": [0.0, 0.0, 0.0], "map": 0.0}
+    else:
+        result = eval_detection_my(
+            pred_boxlists=pred_boxlists,
+            gt_boxlists=gt_boxlists,
+            iou_thresh=0.5,
+            use_07_metric=True,
+            )
     result_str = "mAP: {:.4f}\n".format(result["map"])
     for i, ap in enumerate(result["ap"]):
         if i == 0:  # skip background
@@ -76,14 +86,14 @@ def calc_detection_my_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
     score = defaultdict(list)
     match = defaultdict(list)
     for gt_boxlist, pred_boxlist in zip(gt_boxlists, pred_boxlists):
-        pred_bbox = pred_boxlist.bbox.numpy()
-        pred_label = pred_boxlist.get_field("labels").numpy()
-        pred_score = pred_boxlist.get_field("scores").numpy()
-        gt_bbox = gt_boxlist.bbox.numpy()
-        gt_label = gt_boxlist.get_field("labels").numpy()
-        gt_difficult = gt_boxlist.get_field("difficult").numpy()
+        pred_bbox = pred_boxlist.bbox.cpu().numpy()
+        pred_label = pred_boxlist.get_field("labels").cpu().numpy()
+        pred_score = pred_boxlist.get_field("scores").cpu().numpy()
+        gt_bbox = gt_boxlist.bbox.cpu().numpy()
+        gt_label = gt_boxlist.get_field("labels").cpu().numpy()
 
         for l in np.unique(np.concatenate((pred_label, gt_label)).astype(int)):
+
             pred_mask_l = pred_label == l
             pred_bbox_l = pred_bbox[pred_mask_l]
             pred_score_l = pred_score[pred_mask_l]
@@ -94,9 +104,10 @@ def calc_detection_my_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
 
             gt_mask_l = gt_label == l
             gt_bbox_l = gt_bbox[gt_mask_l]
-            gt_difficult_l = gt_difficult[gt_mask_l]
 
-            n_pos[l] += np.logical_not(gt_difficult_l).sum()
+            # gt_difficult_l = gt_difficult[gt_mask_l]
+
+            n_pos[l] += (gt_mask_l * 1).sum()
             score[l].extend(pred_score_l)
 
             if len(pred_bbox_l) == 0:
@@ -108,13 +119,17 @@ def calc_detection_my_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
             # my evaluation follows integer typed bounding boxes.
             pred_bbox_l = pred_bbox_l.copy()
             pred_bbox_l[:, 2:] += 1
+
             gt_bbox_l = gt_bbox_l.copy()
             gt_bbox_l[:, 2:] += 1
+
             iou = boxlist_iou(
                 BoxList(pred_bbox_l, gt_boxlist.size),
                 BoxList(gt_bbox_l, gt_boxlist.size),
             ).numpy()
+
             gt_index = iou.argmax(axis=1)
+
             # set -1 if there is no matching ground truth
             gt_index[iou.max(axis=1) < iou_thresh] = -1
             del iou
@@ -122,13 +137,10 @@ def calc_detection_my_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
             selec = np.zeros(gt_bbox_l.shape[0], dtype=bool)
             for gt_idx in gt_index:
                 if gt_idx >= 0:
-                    if gt_difficult_l[gt_idx]:
-                        match[l].append(-1)
+                    if not selec[gt_idx]:
+                        match[l].append(1)
                     else:
-                        if not selec[gt_idx]:
-                            match[l].append(1)
-                        else:
-                            match[l].append(0)
+                        match[l].append(0)
                     selec[gt_idx] = True
                 else:
                     match[l].append(0)
@@ -153,7 +165,8 @@ def calc_detection_my_prec_rec(gt_boxlists, pred_boxlists, iou_thresh=0.5):
         # If n_pos[l] is 0, rec[l] is None.
         if n_pos[l] > 0:
             rec[l] = tp / n_pos[l]
-
+    print("Prec:", prec)
+    print("Rec:", rec)
     return prec, rec
 
 

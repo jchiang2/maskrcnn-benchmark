@@ -159,7 +159,7 @@ class COCODemo(object):
         )
         return transform
 
-    def run_on_opencv_image(self, image):
+    def run_on_opencv_image(self, image, **kwargs):
         """
         Arguments:
             image (np.ndarray): an image as returned by OpenCV
@@ -185,14 +185,7 @@ class COCODemo(object):
         '''
         result = self.overlay_class_names(result, top_predictions)
 
-        labels = top_predictions.get_field("labels").tolist()
-        labels = [self.CATEGORIES[i] for i in labels]
-        count = 0
-        for label in labels:
-            if 'car' in label:
-                count += 1
-
-        return result, top_predictions, count
+        return result, top_predictions
 
     def compute_prediction(self, original_image):
         """

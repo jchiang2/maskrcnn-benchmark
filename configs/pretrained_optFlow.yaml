@@ -1,6 +1,6 @@
 MODEL:
   META_ARCHITECTURE: "GeneralizedRCNN"
-  WEIGHT: "/home/jchiang2/github/maskrcnn-benchmark/Checkpoints/model_0500000.pth"
+  WEIGHT: ""   # Add path to your model here
   BACKBONE:
     CONV_BODY: "R-50-FPN"
   RESNETS:
@@ -31,7 +31,7 @@ MODEL:
     SHARE_BOX_FEATURE_EXTRACTOR: False
   MASK_ON: False
 DATASETS:
-  TRAIN: ("myDataset_train",)
+  TRAIN: ("myDataset_traintest_split","myDataset_dataApr1",)
   TEST: ("myDataset_test",)
 DATALOADER:
   SIZE_DIVISIBILITY: 32

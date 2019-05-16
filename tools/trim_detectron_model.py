@@ -22,7 +22,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--save_path",
-    default="./pretrained_model/mask_rcnn_R-50-FPN_1x_detectron_no_last_layers.pth",
+    default="./pretrained_model/no_last_layers.pth",
     help="path to save the converted model",
     type=str,
 )

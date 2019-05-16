@@ -27,11 +27,11 @@ class GeneralizedRCNN(nn.Module):
         super(GeneralizedRCNN, self).__init__()
 
         self.backbone = build_backbone(cfg, 3)
-        self.optFlowStream = build_backbone(cfg, 2)
+        self.optFlowStream = build_backbone(cfg, 3)
         self.rpn = build_rpn(cfg, self.backbone.out_channels)
         self.roi_heads = build_roi_heads(cfg, self.backbone.out_channels)
 
-    def forward(self, images, optFlowVol, targets=None):
+    def forward(self, images, optFlowVol=None, targets=None):
         """
         Arguments:
             images (list[Tensor] or ImageList): images to be processed
@@ -48,10 +48,14 @@ class GeneralizedRCNN(nn.Module):
             raise ValueError("In training mode, targets should be passed")
         images = to_image_list(images)
         optFlowVol = to_image_list(optFlowVol)
+
         features = self.backbone(images.tensors)
         optFlowFeat = self.optFlowStream(optFlowVol.tensors)
+
         fused_features = [features[i] * optFlowFeat[i] for i in range(len(features))]
+        
         proposals, proposal_losses = self.rpn(images, features, targets)
+        
         if self.roi_heads:
             x, result, detector_losses = self.roi_heads(fused_features, proposals, targets)
         else:

@@ -21,8 +21,8 @@ from maskrcnn_benchmark.utils.miscellaneous import mkdir
 def main():
     parser = argparse.ArgumentParser(description="PyTorch Object Detection Inference")
     parser.add_argument(
-        "--config-file",
-        default="/private/home/fmassa/github/detectron.pytorch_v2/configs/e2e_faster_rcnn_R_50_C4_1x_caffe2.yaml",
+        "--config",
+        default="maskrcnn_benchmark/data/datasets/predictor.yaml",
         metavar="FILE",
         help="path to config file",
     )
@@ -39,17 +39,18 @@ def main():
     num_gpus = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1
     distributed = num_gpus > 1
 
-    if distributed:
-        torch.cuda.set_device(args.local_rank)
-        torch.distributed.init_process_group(
-            backend="nccl", init_method="env://"
-        )
-        synchronize()
+    # if distributed:
+    #     torch.cuda.set_device(args.local_rank)
+    #     torch.distributed.init_process_group(
+    #         backend="nccl", init_method="env://"
+    #     )
+    #     synchronize()
 
-    cfg.merge_from_file(args.config_file)
-    cfg.merge_from_list(args.opts)
-    cfg.freeze()
-
+    cfg.merge_from_file(args.config)
+    # cfg.merge_from_list(args.opts)
+    # cfg.freeze()
+    mycfg = cfg.clone()
+    
     save_dir = ""
     logger = setup_logger("maskrcnn_benchmark", save_dir, get_rank())
     logger.info("Using {} GPUs".format(num_gpus))
@@ -58,12 +59,13 @@ def main():
     logger.info("Collecting env info (might take some time)")
     logger.info("\n" + collect_env_info())
 
-    model = build_detection_model(cfg)
-    model.to(cfg.MODEL.DEVICE)
+    model = build_detection_model(mycfg)
+    model.eval()
+    model.to(mycfg.MODEL.DEVICE)
 
     output_dir = cfg.OUTPUT_DIR
-    checkpointer = DetectronCheckpointer(cfg, model, save_dir=output_dir)
-    _ = checkpointer.load(cfg.MODEL.WEIGHT)
+    # checkpointer = DetectronCheckpointer(cfg, model, save_dir=output_dir)
+    # _ = checkpointer.load(cfg.MODEL.WEIGHT)
 
     iou_types = ("bbox",)
     if cfg.MODEL.MASK_ON:

@@ -18,6 +18,7 @@ def boxlist_nms(boxlist, nms_thresh, max_proposals=-1, score_field="scores"):
             after non-maximum suppression
         score_field (str)
     """
+    
     if nms_thresh <= 0:
         return boxlist
     mode = boxlist.mode
@@ -126,3 +127,4 @@ def cat_boxlist(bboxes):
         cat_boxes.add_field(field, data)
 
     return cat_boxes
+

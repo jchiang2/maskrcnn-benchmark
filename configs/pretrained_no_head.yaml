@@ -1,6 +1,6 @@
 MODEL:
   META_ARCHITECTURE: "GeneralizedRCNN"
-  WEIGHT: "/usr0/home/jchiang2/github/maskrcnn-benchmark/tools/pretrained_model/mask_rcnn_R-50-FPN_1x_detectron_no_last_layers.pth"
+  WEIGHT: "/home/jchiang2/github/maskrcnn-benchmark/tools/pretrained_model/no_last.pth"
   BACKBONE:
     CONV_BODY: "R-50-FPN"
   RESNETS:
@@ -31,8 +31,8 @@ MODEL:
     SHARE_BOX_FEATURE_EXTRACTOR: False
   MASK_ON: False
 DATASETS:
-  TRAIN: ("myDataset_train",)
-  TEST: ("myDataset_train",)
+  TRAIN: ("myDataset_dataApr1","myDataset_dataApr2","myDataset_bus_2012","myDataset_bus_2013","myDataset_bus_2014")
+  TEST: ("myDataset_test",)
 DATALOADER:
   SIZE_DIVISIBILITY: 32
 SOLVER:
@@ -44,3 +44,6 @@ SOLVER:
 TEST:
   IMS_PER_BATCH: 1
 OUTPUT_DIR: "Checkpoints"
+
+# "/home/jchiang2/github/maskrcnn-benchmark/tools/pretrained_model/no_last.pth"
+# ("myDataset_traintest_split","myDataset_dataApr1",)

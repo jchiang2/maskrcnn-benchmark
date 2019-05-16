@@ -81,10 +81,10 @@ def load_state_dict(model, loaded_state_dict):
     #     if "optFlow" in key:
     #         model_state_dict[key] = torch.zeros(model_state_dict[key].size())
             
-    conv1 = torch.nn.Conv2d(
-            2, 64, kernel_size=7, stride=2, padding=3, bias=False
-        )
-    torch.nn.init.xavier_uniform(conv1.weight)
-    model_state_dict["optFlowStream.body.stem.conv1.weight"] = conv1.weight.data
+    # conv1 = torch.nn.Conv2d(
+    #         3, 64, kernel_size=7, stride=2, padding=3, bias=False
+    #     )
+    # torch.nn.init.xavier_uniform(conv1.weight)
+    # model_state_dict["optFlowStream.body.stem.conv1.weight"] = conv1.weight.data
 
     model.load_state_dict(model_state_dict)

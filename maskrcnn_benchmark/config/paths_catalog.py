@@ -8,16 +8,37 @@ class DatasetCatalog(object):
     DATA_DIR = "datasets"
     DATASETS = {
         "myDataset_train": {
-            "img_dir": "Movie_Frames_test/split_train/Frames",
-            "ann_file": "Movie_Frames_test/split_train/Bboxes_mydataset"
+            "dir": "data_maskrcnn/train"
         },
-        "myDataset_train_split": {
-            "img_dir": "Movie_Frames_test/split_train/Frames",
-            "ann_file": "Movie_Frames_test/split_train/Bboxes_mydataset"
+        "myDataset_traintest_split": {
+            "dir": "data_maskrcnn/traintest_split"
         },
         "myDataset_test": {
-            "img_dir": "Movie_Frames_test/Frames",
-            "ann_file": "Movie_Frames_test/Bboxes_mydataset"
+            "dir": "data_maskrcnn/test"
+        },
+        "myDataset_dataApr1": {
+            "dir": "data_maskrcnn/dataApr1"
+        },
+        "myDataset_dataApr2": {
+            "dir": "data_maskrcnn/dataApr2"
+        },
+        "myDataset_bus_2012": {
+            "dir": "data_maskrcnn/dormont_data/bus_2012"
+        },
+        "myDataset_bus_2013": {
+            "dir": "data_maskrcnn/dormont_data/bus_2013"
+        },
+        "myDataset_bus_2014": {
+            "dir": "data_maskrcnn/dormont_data/bus_2014"
+        },
+        "myDataset_toy": {
+            "dir": "data_maskrcnn/toy"
+        },
+        "myDataset_parked_dataset": {
+            "dir": "data_maskrcnn/parked_dataset"
+        },
+        "myDataset_flipped": {
+            "dir": "data_maskrcnn/flipped"
         },
         "coco_2017_train": {
             "img_dir": "coco/train2017",
@@ -105,11 +126,9 @@ class DatasetCatalog(object):
     @staticmethod
     def get(name):
         if "myDataset" in name:
-            data_dir = DatasetCatalog.DATA_DIR
             attrs = DatasetCatalog.DATASETS[name]
             args = dict(
-                root=os.path.join(data_dir, attrs["img_dir"]),
-                ann_file=os.path.join(data_dir, attrs["ann_file"]),
+                root=attrs["dir"],
             )
             return dict(
                 factory="myDataset",

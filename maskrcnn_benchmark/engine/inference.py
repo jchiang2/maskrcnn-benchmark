@@ -13,24 +13,52 @@ from ..utils.comm import all_gather
 from ..utils.comm import synchronize
 
 
+from maskrcnn_benchmark.structures.bounding_box import BoxList
+
+
 def compute_on_dataset(model, data_loader, device):
     model.eval()
     results_dict = {}
-    cpu_device = torch.device("cpu")
+    cuda_device = torch.device("cuda")
     for i, batch in enumerate(tqdm(data_loader)):
-        print(targets)
-        images, targets, image_ids = batch
+        images, optFlowVol, targets, image_ids = batch
+        
         images = images.to(device)
+        optFlowVol = optFlowVol.to(device)
+
         with torch.no_grad():
-            output = model(images)
-            output = [o.to(cpu_device) for o in output]
+            output = model(images, optFlowVol)
+            output = [o.to(cuda_device) for o in output]
+
+        top_output = select_top_predictions(output[0])
+        top_output = [select_top_predictions(out) for out in output]
+
         results_dict.update(
-            {img_id: result for img_id, result in zip(image_ids, output)}
+            {img_id: result for img_id, result in zip(image_ids, top_output)}
         )
-    # for key in results_dict:
-    #     print(key,results_dict[key])
+    print(results_dict)
     return results_dict
 
+def select_top_predictions(predictions):
+    """
+    Select only predictions which have a `score` > self.confidence_threshold,
+    and returns the predictions in descending order of score
+
+    Arguments:
+        predictions (BoxList): the result of the computation by the model.
+            It should contain the field `scores`.
+
+    Returns:
+        prediction (BoxList): the detected objects. Additional information
+            of the detection properties can be found in the fields of
+            the BoxList via `prediction.fields()`
+    """
+    scores = predictions.get_field("scores")
+    keep = torch.nonzero(scores > 0.7).squeeze(1)
+    predictions = predictions[keep]
+    scores = predictions.get_field("scores")
+    _, idx = scores.sort(0, descending=True)
+    return predictions[idx]
 
 def _accumulate_predictions_from_multiple_gpus(predictions_per_gpu):
     all_predictions = all_gather(predictions_per_gpu)
@@ -87,7 +115,7 @@ def inference(
         )
     )
 
-    predictions = _accumulate_predictions_from_multiple_gpus(predictions)
+    # predictions = _accumulate_predictions_from_multiple_gpus(predictions)
     if not is_main_process():
         return
 
@@ -100,7 +128,6 @@ def inference(
         expected_results=expected_results,
         expected_results_sigma_tol=expected_results_sigma_tol,
     )
-
     return evaluate(dataset=dataset,
                     predictions=predictions,
                     output_folder=output_folder,

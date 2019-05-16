@@ -75,6 +75,8 @@ def train(cfg, local_rank, distributed):
         device,
         checkpoint_period,
         arguments,
+        cfg,
+        distributed,
     )
 
     return model
